@@ -31,6 +31,7 @@ def main():
             clear_console()
             print("Mario Party 4 Autosplitter\n\nSelect Category:\n1. Individual Boards (Not Board Specific)\n")
             selection3 = input("Select an option: ")
+            clear_console()
         else:
             print("\nInvalid option.\nPress Enter to Retry.\n")
             invalidopt = input()
@@ -47,22 +48,30 @@ def main():
 
             if dme.is_hooked():
                 print("Dolphin Hooked successfully.\n")
-                currentturn = dme.read_byte(0x8018F99C)
                 try:
                     sock = socket.create_connection(("127.0.0.1", 16834))
+                    print("Connected to Livesplit Server.")
                 except ConnectionRefusedError:
                     print("Could not connect to LiveSplit Server. Is it running?")
                     return
                 
                 last_turn = dme.read_byte(0x8018F99C)
 
+                print("Waiting for turn 1 to begin...")
+                while last_turn != 1:
+                    time.sleep(0.1)
+                    last_turn = dme.read_byte(0x8018F99C)
+
+                print(f"Waiting for turn {last_turn + 1} to begin...")   # <- new line, announces turn 2 is next
+
                 while True:
                     time.sleep(0.5)
                     current_turn = dme.read_byte(0x8018F99C)
-                    
-                    if current_turn != last_turn:
+
+                    if current_turn == last_turn + 1:
                         sock.sendall(b"split\r\n")
                         last_turn = current_turn
+                        print(f"Waiting for turn {last_turn + 1} to begin...")
 
                         if current_turn == 10:
                             print("Turn 10 Reached. Terminating")
